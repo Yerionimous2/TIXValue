@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
         x = 0;
         tmTk1 = new TimerTask() {
 
+
             @Override
             public void run() {
                 x += 2;
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
                 });
                 editor.putFloat("Value", y);
                 editor.apply();
-                srStonks.appendData(new DataPoint(x, y), true, 5000);
+                srStonks.appendData(new DataPoint(x, y), true, 500000000);
                 grStonks.addSeries(srStonks);
             }
         };
