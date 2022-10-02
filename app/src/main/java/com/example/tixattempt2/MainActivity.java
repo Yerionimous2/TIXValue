@@ -49,9 +49,7 @@ public class MainActivity extends AppCompatActivity {
                 y = getY(y);
                 y += (Math.random()*2-1)/200;
                 yString = y + " Euro";
-                runOnUiThread(() -> {
-                    lbValue.setText(yString);
-                });
+                runOnUiThread(() -> lbValue.setText(yString));
                 editor.putFloat("Value", y);
                 editor.apply();
                 srStonks.appendData(new DataPoint(x, y), true, 500000000);
