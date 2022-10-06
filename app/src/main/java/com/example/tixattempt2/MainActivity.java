@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 x += 2;
-                y = getY(y);
+                y = getY();
                 y += (Math.random()*2-1)/200;
                 yString = y + " Euro";
                 runOnUiThread(() -> lbValue.setText(yString));
@@ -77,36 +77,42 @@ public class MainActivity extends AppCompatActivity {
                 connection.setReadTimeout(15000);
                 connection.connect();
                 BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String content = "", line;
+                String content, line;
+                StringBuilder sb = new StringBuilder();
                 while ((line = rd.readLine()) != null) {
-                    content += line + "\n";
+                    sb.append(line).append("\n");
                 }
+                content = sb.toString();
                 htmlTemp = content;
             } catch(Exception ex) {
                 htmlTemp = "";
             }
         });
         t.start();
-        while(t.isAlive());
-        //System.out.println(htmlTemp);
+        while(t.isAlive()) {
+            wait2();
+        }
 
         return htmlTemp;
+    }
+
+    public static void wait2() {
+
     }
 
     public float getSP500Value() {
         String htmlTemp2 = performGetCall("https://www.google.com/search?q=s%26p+500+wert&oq=s%26p+500+wert&aqs=chrome..69i57.10719j0j7&sourceid=chrome&ie=UTF-8");
         int index = 0;
         for(int i = 14; i < htmlTemp2.length(); i++) {
-            if(htmlTemp2.substring(i - 14,i).equals("jsname=\"vWLAgc")) {
+            if(htmlTemp2.startsWith("jsname=\"vWLAgc", i - 14)) {
                 index = i;
                 break;
             }
         }
 
         String valueString = htmlTemp2.substring(index + 38, index + 46);
-        float value = getValueFromString(valueString);
 
-        return value;
+        return getValueFromString(valueString);
     }
 
     public float getValueFromString(String valueString) {
@@ -125,12 +131,10 @@ public class MainActivity extends AppCompatActivity {
         }
         valueString = new String(valueArray);
 
-        float value = Float.parseFloat(valueString);
-
-        return value;
+        return Float.parseFloat(valueString);
     }
 
-    public float getY(float y) {
+    public float getY() {
         return getSP500Value();
     }
 }
