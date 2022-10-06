@@ -17,6 +17,7 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
+@SuppressWarnings("SpellCheckingInspection")
 public class MainActivity extends AppCompatActivity {
     private SharedPreferences.Editor editor;
     public Random rand;
