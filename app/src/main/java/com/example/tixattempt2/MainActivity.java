@@ -58,16 +58,19 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 x += 2;
+                float lastY = y;
                 y = getY(1000, 75, 100, 450, 274);
-                yString = y + " Euro";
-                runOnUiThread(() -> lbValue.setText(yString));
-                editor.putFloat("Value", y);
-                editor.putFloat("Xiaomi", Xiaomi);
-                editor.putFloat("GlobalCleanEnergy", GlobalCleanEnergy);
-                editor.putFloat("SP500", SP500);
-                editor.apply();
-                srStonks.appendData(new DataPoint(x, y), true, 500000000);
-                grStonks.addSeries(srStonks);
+                if(y != lastY) {
+                    yString = y + " Euro";
+                    runOnUiThread(() -> lbValue.setText(yString));
+                    editor.putFloat("Value", y);
+                    editor.putFloat("Xiaomi", Xiaomi);
+                    editor.putFloat("GlobalCleanEnergy", GlobalCleanEnergy);
+                    editor.putFloat("SP500", SP500);
+                    editor.apply();
+                    srStonks.appendData(new DataPoint(x, y), false, 50);
+                    grStonks.addSeries(srStonks);
+                }
             }
         };
         tm1 = new Timer();
@@ -89,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
                 while ((line = rd.readLine()) != null) {
                     sb.append(line).append("\n");
                 }
+                rd.close();
                 connection.disconnect();
                 content = sb.toString();
                 htmlTemp = content;
@@ -97,16 +101,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         t.start();
-        while(t.isAlive()) {
-            wait2();
-        }
-
+        //noinspection StatementWithEmptyBody
+        while(t.isAlive());
         return htmlTemp;
     }
 
-    public static void wait2() {
-
-    }
 
     public float getXiaomiValue() {
         String htmlTemp2 = performGetCall("https://www.google.com/search?q=xiaomi+wert&oq=xiaomi+wert&aqs=chrome..69i57.2502j0j7&sourceid=chrome&ie=UTF-8");
