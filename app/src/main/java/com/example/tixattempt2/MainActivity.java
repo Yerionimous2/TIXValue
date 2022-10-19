@@ -51,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
         srStonks = new LineGraphSeries<>();
         grStonks = findViewById(R.id.graph1);
         lbValue = findViewById(R.id.lbValue);
+        grStonks.getViewport().setScrollable(true);
+        grStonks.getViewport().scrollToEnd();
         x = 0;
         tmTk1 = new TimerTask() {
 
