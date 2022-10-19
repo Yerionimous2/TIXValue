@@ -30,6 +30,9 @@ public class MainActivity extends AppCompatActivity {
     private static String htmlTemp = "";
     private float x;
     private float y;
+    private float Xiaomi;
+    private float SP500;
+    private float GlobalCleanEnergy;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +40,10 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
         editor = sharedPref.edit();
 
-        y = sharedPref.getFloat("Value", 12);
+        y = sharedPref.getFloat("Value", 0);
+        Xiaomi = sharedPref.getFloat("Xiaomi", 0);
+        GlobalCleanEnergy = sharedPref.getFloat("GlobalCleanEnergy", 0);
+        SP500 = sharedPref.getFloat("SP500", 0);
 
         setContentView(R.layout.activity_main);
         rand = new Random();
@@ -52,10 +58,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 x += 2;
-                y = getY();
+                y = getY(1000, 75, 100, 450, 274);
                 yString = y + " Euro";
                 runOnUiThread(() -> lbValue.setText(yString));
                 editor.putFloat("Value", y);
+                editor.putFloat("Xiaomi", Xiaomi);
+                editor.putFloat("GlobalCleanEnergy", GlobalCleanEnergy);
+                editor.putFloat("SP500", SP500);
                 editor.apply();
                 srStonks.appendData(new DataPoint(x, y), true, 500000000);
                 grStonks.addSeries(srStonks);
@@ -80,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
                 while ((line = rd.readLine()) != null) {
                     sb.append(line).append("\n");
                 }
+                connection.disconnect();
                 content = sb.toString();
                 htmlTemp = content;
             } catch(Exception ex) {
@@ -100,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
 
     public float getXiaomiValue() {
         String htmlTemp2 = performGetCall("https://www.google.com/search?q=xiaomi+wert&oq=xiaomi+wert&aqs=chrome..69i57.2502j0j7&sourceid=chrome&ie=UTF-8");
+        if(htmlTemp2.equals("")) return Xiaomi;
         int index = 0;
         for(int i = 14; i < htmlTemp2.length(); i++) {
             if(htmlTemp2.startsWith("jsname=\"vWLAgc", i - 14)) {
@@ -115,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
 
     public float getGlobalCleanEnergyValue() {
         String htmlTemp2 = performGetCall("https://www.justetf.com/de/etf-profile.html?isin=IE00B1XNHC34#overview");
+        if(htmlTemp2.equals("")) return GlobalCleanEnergy;
         int index = 0;
         for(int i = 5; i < htmlTemp2.length(); i++) {
             if(htmlTemp2.startsWith("<span>EUR</span>", i - 5)) {
@@ -130,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
 
     public float getSP500Value() {
         String htmlTemp2 = performGetCall("https://www.finanzen.net/etf/ishares-global-clean-energy-etf-ie00b1xnhc34");
+        if(htmlTemp2.equals("")) return SP500;
         int index = 0;
         for(int i = 14; i < htmlTemp2.length(); i++) {
             if(htmlTemp2.startsWith("<span>EUR</span>", i - 14)) {
@@ -159,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
                 case '7':
                 case '8':
                 case '9':
+                case '.':
                     outputArray[j] = inputArray[i];
                     j++;
                     break;
@@ -175,12 +189,16 @@ public class MainActivity extends AppCompatActivity {
         return Float.parseFloat(valueString);
     }
 
-    public float getY() {
+    public float getY(int XiaomiPieces, int GlobalCleanEnergyPieces, int SP500Pieces, int EURValue, int TIXShares) {
         float result = 0;
-        result += 1000 * getXiaomiValue();
-        result += 75   * getGlobalCleanEnergyValue();
-        result += 100  * getSP500Value();
-        result /= 274;
+        Xiaomi = getXiaomiValue();
+        GlobalCleanEnergy = getGlobalCleanEnergyValue();
+        SP500 = getSP500Value();
+        result += XiaomiPieces            * Xiaomi;
+        result += GlobalCleanEnergyPieces * GlobalCleanEnergy;
+        result += SP500Pieces             * SP500;
+        result += EURValue;
+        result /= TIXShares;
         return result;
     }
 }
