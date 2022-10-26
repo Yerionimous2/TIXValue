@@ -13,6 +13,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,18 +30,19 @@ public class MainActivity extends AppCompatActivity {
     public TextView lbValue;
     private String yString;
     private static String htmlTemp = "";
+    private int ValueCount = 0;
     private float x;
     private float y;
     private float Xiaomi;
     private float SP500;
     private float GlobalCleanEnergy;
+    private List<DataPoint> dataPoints;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
         editor = sharedPref.edit();
-
         y = sharedPref.getFloat("Value", 0);
         Xiaomi = sharedPref.getFloat("Xiaomi", 0);
         GlobalCleanEnergy = sharedPref.getFloat("GlobalCleanEnergy", 0);
@@ -54,24 +57,23 @@ public class MainActivity extends AppCompatActivity {
         grStonks.getViewport().setScrollable(true);
         grStonks.getViewport().scrollToEnd();
         x = 0;
+        dataPoints = new ArrayList<>();
         tmTk1 = new TimerTask() {
-
-
             @Override
             public void run() {
                 x += 2;
                 float lastY = y;
-                y = getY(1000, 75, 100, 450, 274);
+                y = getY(1000, 75, 100, 450, 264);
+                yString = y + " Euro";
+                runOnUiThread(() -> lbValue.setText(yString));
                 if(y != lastY) {
-                    yString = y + " Euro";
-                    runOnUiThread(() -> lbValue.setText(yString));
                     editor.putFloat("Value", y);
                     editor.putFloat("Xiaomi", Xiaomi);
                     editor.putFloat("GlobalCleanEnergy", GlobalCleanEnergy);
                     editor.putFloat("SP500", SP500);
                     editor.apply();
-                    srStonks.appendData(new DataPoint(x, y), false, 50);
-                    grStonks.addSeries(srStonks);
+                    addToGraph(x, y);
+                    ValueCount++;
                 }
             }
         };
@@ -79,7 +81,16 @@ public class MainActivity extends AppCompatActivity {
         tm1.schedule(tmTk1, 0, 2000);
     }
 
-    public static String performGetCall(String sUrl) {
+    private void addToGraph(float x, float y) {
+        dataPoints.add(new DataPoint(x, y));
+        srStonks = new LineGraphSeries<>();
+        for(int i = 0; i < dataPoints.size(); i++) {
+            srStonks.appendData(dataPoints.get(i), true, dataPoints.size());
+        }
+        grStonks.addSeries(srStonks);
+    }
+
+    public static String performHTMLRequest(String sUrl) {
         Thread t = new Thread(() -> {
             try {
                 URL url = new URL(sUrl);
@@ -110,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public float getXiaomiValue() {
-        String htmlTemp2 = performGetCall("https://www.google.com/search?q=xiaomi+wert&oq=xiaomi+wert&aqs=chrome..69i57.2502j0j7&sourceid=chrome&ie=UTF-8");
+        String htmlTemp2 = performHTMLRequest("https://www.google.com/search?q=xiaomi+wert&oq=xiaomi+wert&aqs=chrome..69i57.2502j0j7&sourceid=chrome&ie=UTF-8");
         if(htmlTemp2.equals("")) return Xiaomi;
         int index = 0;
         for(int i = 14; i < htmlTemp2.length(); i++) {
@@ -126,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public float getGlobalCleanEnergyValue() {
-        String htmlTemp2 = performGetCall("https://www.justetf.com/de/etf-profile.html?isin=IE00B1XNHC34#overview");
+        String htmlTemp2 = performHTMLRequest("https://www.justetf.com/de/etf-profile.html?isin=IE00B1XNHC34#overview");
         if(htmlTemp2.equals("")) return GlobalCleanEnergy;
         int index = 0;
         for(int i = 5; i < htmlTemp2.length(); i++) {
@@ -142,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public float getSP500Value() {
-        String htmlTemp2 = performGetCall("https://www.finanzen.net/etf/ishares-global-clean-energy-etf-ie00b1xnhc34");
+        String htmlTemp2 = performHTMLRequest("https://www.finanzen.net/etf/ishares-global-clean-energy-etf-ie00b1xnhc34");
         if(htmlTemp2.equals("")) return SP500;
         int index = 0;
         for(int i = 14; i < htmlTemp2.length(); i++) {
