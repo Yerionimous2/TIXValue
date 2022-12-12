@@ -1,12 +1,19 @@
 package com.example.tixattempt2;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import com.jjoe64.graphview.*;
-import com.jjoe64.graphview.series.*;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import java.io.BufferedReader;
@@ -23,20 +30,21 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity {
     private SharedPreferences.Editor editor;
     public Random rand;
-    public LineGraphSeries<DataPoint> srStonks;
-    public GraphView grStonks;
     public Timer tm1;
     public TimerTask tmTk1;
     public TextView lbValue;
     private String yString;
     private static String htmlTemp = "";
-    private int ValueCount = 0;
     private float x;
     private float y;
     private float Xiaomi;
     private float SP500;
     private float GlobalCleanEnergy;
-    private List<DataPoint> dataPoints;
+
+    public LineChart chart;
+    public List<Entry> dataPoints2 = new ArrayList<>();
+    public LineDataSet dataSet;
+    public LineData lineData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,16 +56,26 @@ public class MainActivity extends AppCompatActivity {
         GlobalCleanEnergy = sharedPref.getFloat("GlobalCleanEnergy", 0);
         SP500 = sharedPref.getFloat("SP500", 0);
 
-        setContentView(R.layout.activity_main);
         rand = new Random();
         setContentView(R.layout.activity_main);
-        srStonks = new LineGraphSeries<>();
-        grStonks = findViewById(R.id.graph1);
         lbValue = findViewById(R.id.lbValue);
-        grStonks.getViewport().setScrollable(true);
-        grStonks.getViewport().scrollToEnd();
+
+        chart = new LineChart(this);
+        chart.setAutoScaleMinMaxEnabled(false);
+        dataPoints2.add(new Entry(0, y));
+        yString = y + " Euro";
+        lbValue.setText(yString);
+        dataSet = new LineDataSet(dataPoints2, "Tix");
+        lineData = new LineData(dataSet);
+        chart.setData(lineData);
+        chart.invalidate();
+        runOnUiThread(() -> lbValue.bringToFront());
+
+        @SuppressLint({"MissingInflatedId", "LocalSuppress"}) ConstraintLayout rl = (ConstraintLayout) findViewById(R.id.layout1);
+        rl.addView(chart);
+        chart.setLayoutParams(new FrameLayout.LayoutParams(ActionBar.LayoutParams.MATCH_PARENT, ActionBar.LayoutParams.MATCH_PARENT));
+
         x = 0;
-        dataPoints = new ArrayList<>();
         tmTk1 = new TimerTask() {
             @Override
             public void run() {
@@ -73,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
                     editor.putFloat("SP500", SP500);
                     editor.apply();
                     addToGraph(x, y);
-                    ValueCount++;
                 }
             }
         };
@@ -82,12 +99,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addToGraph(float x, float y) {
-        dataPoints.add(new DataPoint(x, y));
-        srStonks = new LineGraphSeries<>();
-        for(int i = 0; i < dataPoints.size(); i++) {
-            srStonks.appendData(dataPoints.get(i), true, dataPoints.size());
-        }
-        grStonks.addSeries(srStonks);
+        runOnUiThread(() -> lbValue.bringToFront());
+        chart.setVisibleXRange(0, x);
+        dataPoints2.add(new Entry(x, y));
+        dataSet.notifyDataSetChanged();
+        lineData = new LineData(dataSet);
+        chart.setData(lineData);
+        chart.invalidate();
     }
 
     public static String performHTMLRequest(String sUrl) {
@@ -202,13 +220,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public float getY(int XiaomiPieces, int GlobalCleanEnergyPieces, int SP500Pieces, int EURValue, int TIXShares) {
-        float result = 0;
+        float XiaomiValue, GlobalCleanEnergyValue, SP500Value;
         Xiaomi = getXiaomiValue();
         GlobalCleanEnergy = getGlobalCleanEnergyValue();
         SP500 = getSP500Value();
-        result += XiaomiPieces            * Xiaomi;
-        result += GlobalCleanEnergyPieces * GlobalCleanEnergy;
-        result += SP500Pieces             * SP500;
+        XiaomiValue            = XiaomiPieces            * Xiaomi;
+        GlobalCleanEnergyValue = GlobalCleanEnergyPieces * GlobalCleanEnergy;
+        SP500Value             = SP500Pieces             * SP500;
+        return calcY(XiaomiValue, GlobalCleanEnergyValue, SP500Value, EURValue, TIXShares);
+    }
+
+    public float calcY(float XiaomiValue, float GlobalCleanEnergyValue, float SP500Value, float EURValue, int TIXShares) {
+        float result = 0;
+        result += XiaomiValue;
+        result += GlobalCleanEnergyValue;
+        result += SP500Value;
         result += EURValue;
         result /= TIXShares;
         return result;
